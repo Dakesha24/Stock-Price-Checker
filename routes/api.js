@@ -1,169 +1,111 @@
 'use strict';
 
-const https = require('https');
+const mongoose = require('mongoose');
+const fetch = require('node-fetch');
 const crypto = require('crypto');
 
-// In-memory storage
-const stockLikes = {};
-const ipLikes = {};
+// MongoDB Schema for storing likes
+const StockLike = mongoose.model('StockLike', new mongoose.Schema({
+  stock: { type: String, required: true },
+  ip: { type: String, required: true }, // This will store hashed IP
+  likes: { type: Number, default: 1 }
+}));
 
-// Get client IP
-function getClientIP(req) {
-  return req.headers['x-forwarded-for'] ||
-         req.connection.remoteAddress ||
-         req.socket.remoteAddress ||
-         req.ip ||
-         '127.0.0.1';
+// Function to anonymize IP address by hashing
+function hashIP(ip) {
+  return crypto.createHash('sha256').update(ip).digest('hex');
 }
 
-// Hash IP for anonymization
-function anonymizeIP(ip) {
-  return crypto.createHash('sha256').update(ip + 'salt').digest('hex').substring(0, 16);
-}
-
-// Fetch stock price
-async function fetchStockPrice(symbol) {
-  return new Promise((resolve) => {
-    // Mock data for reliability
-    const mockData = {
-      'GOOG': 786.90,
-      'MSFT': 62.30,
-      'AAPL': 150.00,
-      'TSLA': 250.00
+// Function to get stock data from proxy API  
+async function getStockData(symbol) {
+  try {
+    const response = await fetch(`https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/${symbol}/quote`);
+    const data = await response.json();
+    return {
+      stock: symbol.toUpperCase(),
+      price: data.latestPrice
     };
-    
-    const url = `https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/${symbol}/quote`;
-    
-    const timeout = setTimeout(() => {
-      resolve({
-        stock: symbol,
-        price: mockData[symbol] || 100.00
-      });
-    }, 1000);
-    
-    https.get(url, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        clearTimeout(timeout);
-        try {
-          const json = JSON.parse(data);
-          resolve({
-            stock: json.symbol || symbol,
-            price: json.latestPrice || mockData[symbol] || 100.00
-          });
-        } catch (e) {
-          resolve({
-            stock: symbol,
-            price: mockData[symbol] || 100.00
-          });
-        }
-      });
-    }).on('error', () => {
-      clearTimeout(timeout);
-      resolve({
-        stock: symbol,
-        price: mockData[symbol] || 100.00
-      });
-    });
-  });
-}
-
-// Handle like functionality
-function handleLike(stock, ip) {
-  const hashedIP = anonymizeIP(ip);
-  const likeKey = `${stock}_${hashedIP}`;
-  
-  if (!ipLikes[likeKey]) {
-    ipLikes[likeKey] = true;
-    stockLikes[stock] = (stockLikes[stock] || 0) + 1;
-    return true;
+  } catch (error) {
+    throw new Error('Invalid stock symbol');
   }
-  return false;
 }
 
-// Get like count
-function getLikes(stock) {
-  return stockLikes[stock] || 0;
+// Function to get or update likes for a stock
+async function handleLikes(stock, ip, shouldLike) {
+  const hashedIP = hashIP(ip);
+  
+  if (shouldLike) {
+    // Check if this IP already liked this stock
+    const existingLike = await StockLike.findOne({ 
+      stock: stock.toUpperCase(), 
+      ip: hashedIP 
+    });
+    
+    if (!existingLike) {
+      // Create new like record
+      await StockLike.create({
+        stock: stock.toUpperCase(),
+        ip: hashedIP
+      });
+    }
+  }
+  
+  // Count total likes for this stock
+  const likesCount = await StockLike.countDocuments({ 
+    stock: stock.toUpperCase() 
+  });
+  
+  return likesCount;
 }
 
 module.exports = function (app) {
-  
   app.route('/api/stock-prices')
     .get(async function (req, res) {
       try {
         const { stock, like } = req.query;
-        const clientIP = getClientIP(req);
+        const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+        const shouldLike = like === 'true';
         
-        // Validate stock parameter
-        if (!stock) {
-          return res.status(400).json({ error: 'stock parameter is required' });
+        // Handle single stock
+        if (typeof stock === 'string') {
+          const stockData = await getStockData(stock);
+          const likes = await handleLikes(stock, clientIP, shouldLike);
+          
+          stockData.likes = likes;
+          
+          return res.json({ stockData });
         }
         
-        // Handle single stock or multiple stocks
-        const stocks = Array.isArray(stock) ? stock : [stock];
-        
-        // Limit to maximum 2 stocks
-        if (stocks.length > 2) {
-          return res.status(400).json({ error: 'can only compare up to 2 stocks' });
-        }
-        
-        // Process likes if requested
-        if (like === 'true') {
-          stocks.forEach(stockSymbol => {
-            handleLike(stockSymbol.toUpperCase(), clientIP);
+        // Handle multiple stocks (comparison)
+        if (Array.isArray(stock) && stock.length === 2) {
+          const [stock1, stock2] = stock;
+          
+          // Get stock data for both
+          const [stockData1, stockData2] = await Promise.all([
+            getStockData(stock1),
+            getStockData(stock2)
+          ]);
+          
+          // Handle likes for both stocks if requested
+          const [likes1, likes2] = await Promise.all([
+            handleLikes(stock1, clientIP, shouldLike),
+            handleLikes(stock2, clientIP, shouldLike)
+          ]);
+          
+          // Calculate relative likes
+          stockData1.rel_likes = likes1 - likes2;
+          stockData2.rel_likes = likes2 - likes1;
+          
+          return res.json({ 
+            stockData: [stockData1, stockData2] 
           });
         }
         
-        // Fetch stock data
-        const stockDataPromises = stocks.map(stockSymbol => 
-          fetchStockPrice(stockSymbol.toUpperCase())
-        );
-        
-        const stockResults = await Promise.all(stockDataPromises);
-        
-        // Single stock response
-        if (stocks.length === 1) {
-          const stockData = stockResults[0];
-          const likes = getLikes(stockData.stock);
-          
-          return res.json({
-            stockData: {
-              stock: stockData.stock,
-              price: stockData.price,
-              likes: likes
-            }
-          });
-        }
-        
-        // Two stocks response with relative likes
-        if (stocks.length === 2) {
-          const stock1 = stockResults[0];
-          const stock2 = stockResults[1];
-          
-          const likes1 = getLikes(stock1.stock);
-          const likes2 = getLikes(stock2.stock);
-          
-          return res.json({
-            stockData: [
-              {
-                stock: stock1.stock,
-                price: stock1.price,
-                rel_likes: likes1 - likes2
-              },
-              {
-                stock: stock2.stock,
-                price: stock2.price,
-                rel_likes: likes2 - likes1
-              }
-            ]
-          });
-        }
+        // Invalid request
+        res.status(400).json({ error: 'Invalid stock parameter' });
         
       } catch (error) {
-        console.error('API Error:', error);
-        return res.status(500).json({ error: 'internal server error' });
+        res.status(400).json({ error: error.message });
       }
     });
-    
 };

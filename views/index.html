@@ -1,74 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IS 5 - Nasdaq Stock Price Checker</title>
+<html>
+  <head>
+    <title>Nasdaq Stock Price Checker</title>
+    <meta name="description" content="An app to check stock prices">
+    <link id="favicon" rel="icon" href="https://hyperdev.com/favicon-app.ico" type="image/x-icon">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/public/style.css">
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <h1>IS 5 - Nasdaq Stock Price Checker</h1>
+      <h1>IS 5 - Nasdaq Stock Price Checker</h1>
     </header>
 
-    <main>
-        <section class="api-info">
-            <h2>Example usage:</h2>
-            <code>/api/stock-prices?stock=GOOG</code><br>
-            <code>/api/stock-prices?stock=GOOG&like=true</code><br>
-            <code>/api/stock-prices?stock=GOOG&stock=MSFT</code><br>
-            <code>/api/stock-prices?stock=GOOG&stock=MSFT&like=true</code>
-            
-            <h3>Example return:</h3>
-            <code>{"stockData":{"stock":"GOOG","price":786.90,"likes":1}}</code><br>
-            <code>{"stockData":[{"stock":"MSFT","price":62.30,"rel_likes":-1},{"stock":"GOOG","price":786.90,"rel_likes":1}]}</code>
-        </section>
+    <div id='userstories'>
+      <h3>User Stories:</h3>
+      <ol>
+        <li>Set the content security policies to only allow loading of scripts and CSS from your server.</li>
+        <li>I can <b>GET</b> <code>/api/stock-prices</code> with form data containing a Nasdaq <code>stock</code> ticker and receive back an object <code>stockData</code>.</li>
+        <li>In <code>stockData</code>, I can see the <code>stock</code> (string, the ticker), <code>price</code> (decimal in string format), and <code>likes</code> (int).</li>
+        <li>I can also pass along field <code>like</code> as <code>true</code> (boolean) to have my like added to the stock(s). Only 1 like per IP should be accepted.</li>
+        <li>If I pass along 2 stocks, the return object will be an array with information about both stocks. The only difference is that it will display a <code>rel_likes</code> (the difference between the likes on both stocks) on both.</li>
+        <li>A good way to receive current price is the following external API:<br><code>https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/[symbol]/quote</code></li>
+        <li>All IP addresses should be anonymized.</li>
+      </ol>
 
-        <section class="forms">
-            <h2>Front-End:</h2>
-            
-            <div class="form-container">
-                <h3>Get single price and total likes</h3>
-                <form id="testForm2">
-                    <label for="stock1">Stock Symbol:</label>
-                    <input type="text" id="stock1" name="stock" placeholder="GOOG" required>
-                    
-                    <label for="like1">
-                        <input type="checkbox" id="like1" name="like"> Like?
-                    </label>
-                    
-                    <button type="submit">Get Price!</button>
-                </form>
-            </div>
+      <h3>Example usage:</h3>
+      <code>/api/stock-prices?stock=GOOG</code><br>
+      <code>/api/stock-prices?stock=GOOG&like=true</code><br>
+      <code>/api/stock-prices?stock=GOOG&stock=MSFT</code><br>
+      <code>/api/stock-prices?stock=GOOG&stock=MSFT&like=true</code><br>
 
-            <div class="form-container">
-                <h3>Compare and get relative likes</h3>
-                <form id="testForm">
-                    <label for="stock2">Stock 1:</label>
-                    <input type="text" id="stock2" name="stock1" placeholder="GOOG" required>
-                    
-                    <label for="stock3">Stock 2:</label>
-                    <input type="text" id="stock3" name="stock2" placeholder="MSFT" required>
-                    
-                    <label for="like2">
-                        <input type="checkbox" id="like2" name="like"> Like both?
-                    </label>
-                    
-                    <button type="submit">Get Price!</button>
-                </form>
-            </div>
-        </section>
+      <h3>Example return:</h3>
+      <code>{"stockData":{"stock":"GOOG","price":786.90,"likes":1}}</code><br>
+      <code>{"stockData":[{"stock":"MSFT","price":62.30,"rel_likes":-1},{"stock":"GOOG","price":786.90,"rel_likes":1}]}</code>
+    </div>
 
-        <section class="results">
-            <h3>Result:</h3>
-            <pre id="jsonResult">Submit a form to see results</pre>
-        </section>
-    </main>
+    <hr style='margin: 50px'>
 
-    <footer>
-        <p>Built for freeCodeCamp Information Security Project</p>
-    </footer>
+    <div id='testui'>
+      <h3>Front-End:</h3>
+      <form id="testForm2" class="border">
+        <h5>Get single price and total likes</h5>
+        <input type="text" placeholder="GOOG">
+        <input type="checkbox"> Like?
+        <button type="submit">Get Price!</button>
+      </form>
+      <form id="testForm" class="border">
+        <h5>Compare and get relative likes</h5>
+        <input type="text" placeholder="GOOG">
+        <input type="text" placeholder="MSFT">
+        <input type="checkbox"> Like both?
+        <button type="submit">Get Price!</button>
+      </form>
+      <div class='p-50'>
+        <h4>Return:</h4>
+        <pre id='jsonResult'></pre>
+      </div>
+    </div>
 
     <script src="/public/script.js"></script>
-</body>
+  </body>
 </html>
