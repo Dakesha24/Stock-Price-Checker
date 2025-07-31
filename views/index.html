@@ -1,60 +1,74 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Stock Price Checker</title>
-    <link
-      id="favicon"
-      rel="icon"
-      href="https://cdn.freecodecamp.org/universal/favicons/favicon-32x32.png"
-      type="image/x-icon"
-    />
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="./public/style.css" />
-  </head>
-  <body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IS 5 - Nasdaq Stock Price Checker</title>
+    <link rel="stylesheet" href="/public/style.css">
+</head>
+<body>
     <header>
-      <h1>ISQA_5 - Nasdaq Stock Price Checker</h1>
+        <h1>IS 5 - Nasdaq Stock Price Checker</h1>
     </header>
-    <div id="userstories">
-      <h3>Example usage:</h3>
-      <code>/api/stock-prices?stock=GOOG</code>
-      <br />
-      <code>/api/stock-prices?stock=GOOG&amp;like=true</code>
-      <br />
-      <code>/api/stock-prices?stock=GOOG&amp;stock=MSFT</code>
-      <br />
-      <code>/api/stock-prices?stock=GOOG&amp;stock=MSFT&amp;like=true</code>
-      <br />
-      <h3>Example return:</h3>
-      <code>{"stockData":{"stock":"GOOG","price":786.90,"likes":1}}</code>
-      <br />
-      <code>
-        {"stockData":[{"stock":"MSFT","price":62.30,"rel_likes":-1},{"stock":"GOOG","price":786.90,"rel_likes":1}]}
-      </code>
-    </div>
-    <hr class="p-50" />
-    <div id="testui">
-      <h2 class="text-align-left">Front-End:</h2>
-      <h3>Get single price and total likes</h3>
-      <form id="testForm2" class="border">
-        <input type="text" name="stock" placeholder="GOOG" required="" />
-        <input type="checkbox" name="like" value="true" /> Like?
-        <br />
-        <button type="submit">Get Price!</button>
-      </form>
-      <h3>Compare and get relative likes</h3>
-      <form id="testForm" class="border">
-        <input type="text" name="stock" placeholder="GOOG" required="" />
-        <input type="text" name="stock" placeholder="MSFT" required="" />
-        <input type="checkbox" name="like" value="true" /> Like both?
-        <br />
-        <button type="submit">Get Price!</button>
-      </form>
-      <code id="jsonResult"></code>
-    </div>
-    <hr class="m-50 mt-200" />
+
+    <main>
+        <section class="api-info">
+            <h2>Example usage:</h2>
+            <code>/api/stock-prices?stock=GOOG</code><br>
+            <code>/api/stock-prices?stock=GOOG&like=true</code><br>
+            <code>/api/stock-prices?stock=GOOG&stock=MSFT</code><br>
+            <code>/api/stock-prices?stock=GOOG&stock=MSFT&like=true</code>
+            
+            <h3>Example return:</h3>
+            <code>{"stockData":{"stock":"GOOG","price":786.90,"likes":1}}</code><br>
+            <code>{"stockData":[{"stock":"MSFT","price":62.30,"rel_likes":-1},{"stock":"GOOG","price":786.90,"rel_likes":1}]}</code>
+        </section>
+
+        <section class="forms">
+            <h2>Front-End:</h2>
+            
+            <div class="form-container">
+                <h3>Get single price and total likes</h3>
+                <form id="testForm2">
+                    <label for="stock1">Stock Symbol:</label>
+                    <input type="text" id="stock1" name="stock" placeholder="GOOG" required>
+                    
+                    <label for="like1">
+                        <input type="checkbox" id="like1" name="like"> Like?
+                    </label>
+                    
+                    <button type="submit">Get Price!</button>
+                </form>
+            </div>
+
+            <div class="form-container">
+                <h3>Compare and get relative likes</h3>
+                <form id="testForm">
+                    <label for="stock2">Stock 1:</label>
+                    <input type="text" id="stock2" name="stock1" placeholder="GOOG" required>
+                    
+                    <label for="stock3">Stock 2:</label>
+                    <input type="text" id="stock3" name="stock2" placeholder="MSFT" required>
+                    
+                    <label for="like2">
+                        <input type="checkbox" id="like2" name="like"> Like both?
+                    </label>
+                    
+                    <button type="submit">Get Price!</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="results">
+            <h3>Result:</h3>
+            <pre id="jsonResult">Submit a form to see results</pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>Built for freeCodeCamp Information Security Project</p>
+    </footer>
+
     <script src="/public/script.js"></script>
-  </body>
+</body>
 </html>
